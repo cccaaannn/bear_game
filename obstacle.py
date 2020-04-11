@@ -1,21 +1,20 @@
 import pygame
 
 class obstacle():
-    def __init__(self, screen, screen_resolution, obstacle_image_path, obstacle_image_size = (50, 50)):
+    def __init__(self, screen, screen_resolution, obstacle_image, obstacle_moveing_speed, obstacle_image_size):
 
         self.base_position = {"x":screen_resolution[0]+20, "y":screen_resolution[1]-obstacle_image_size[1]}
+        self.obstacle_position = {"x":self.base_position["x"], "y":self.base_position["y"]}
 
-        self.obstacle_moveing_speed = 0.25
-
+        self.obstacle_moveing_speed = obstacle_moveing_speed
 
         self.screen = screen
         self.screen_resolution = screen_resolution
         self.obstacle_image_size = obstacle_image_size
+        self.obstacle_image = obstacle_image
+        
 
-        temp_image = pygame.image.load(obstacle_image_path).convert_alpha()
-        self.obstacle_image = pygame.transform.scale(temp_image, obstacle_image_size)
-
-        self.obstacle_position = {"x":self.base_position["x"], "y":self.base_position["y"]}
+        
   
     def __del__(self):
         pass
@@ -39,11 +38,28 @@ class obstacle():
         hit_box[1] = self.obstacle_position["y"]
         return hit_box
 
-    def get_random_obstacle_position(self):
-        pass
+    def get_pos(self):
+        return self.obstacle_position
+
+    def get_base_position(self):
+        return self.base_position
+
+    def set_obstacle_moveing_speed(self, new_speed):
+        self.obstacle_moveing_speed = new_speed
+    
+    def get_obstacle_moveing_speed(self):
+        return self.obstacle_moveing_speed
 
 
 
 class tree(obstacle):
-    def __init__(self, screen, screen_resolution, obstacle_image_path='images/tree.png', obstacle_image_size=(40,60)):
-        super().__init__(screen, screen_resolution, obstacle_image_path=obstacle_image_path, obstacle_image_size=obstacle_image_size)
+    def __init__(self, screen, screen_resolution, obstacle_image, obstacle_moveing_speed = 0.25, obstacle_image_size=(30,50)):
+        super().__init__(screen, screen_resolution, obstacle_image=obstacle_image, obstacle_moveing_speed=obstacle_moveing_speed, obstacle_image_size=obstacle_image_size)
+
+
+class bird(obstacle):
+    def __init__(self, screen, screen_resolution, obstacle_image, obstacle_moveing_speed = 0.25, obstacle_image_size=(40,30)):
+        super().__init__(screen, screen_resolution, obstacle_image=obstacle_image, obstacle_moveing_speed=obstacle_moveing_speed, obstacle_image_size=obstacle_image_size)
+        self.base_position = {"x":screen_resolution[0]+20, "y":screen_resolution[1]-obstacle_image_size[1]-40}
+        self.obstacle_position = {"x":self.base_position["x"], "y":self.base_position["y"]}
+
