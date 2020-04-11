@@ -132,15 +132,15 @@ while running:
     if(score < 1000):
         create_obstacle(obstacle_moveing_speed=0.3)
     elif(score < 2000):
-        create_obstacle(obstacle_moveing_speed=0.3)
-    elif(score < 3000):
         create_obstacle(obstacle_moveing_speed=0.35)
-    elif(score < 4000):
+    elif(score < 3000):
         create_obstacle(obstacle_moveing_speed=0.4)
-    elif(score < 5000):
+    elif(score < 4000):
         create_obstacle(obstacle_moveing_speed=0.45)
-    else:
+    elif(score < 5000):
         create_obstacle(obstacle_moveing_speed=0.5)
+    else:
+        create_obstacle(obstacle_moveing_speed=0.55)
     
 
     # move, delete check collision
