@@ -1,190 +1,275 @@
 import pygame
 import random
 import gc
+import sys
 from player import player as create_player
 from obstacle import tree as create_tree
 from obstacle import bird as create_bird
+class bear_game():
+    def __init__(self):
+        self.init_window()
+        self.set_game_options()
+        self.load_game_elements()
+        self.init_game()
+        self.start_menu()
 
-# init window
-pygame.init()
-screen_resolution = (800,300)
-screen = pygame.display.set_mode(screen_resolution)
-pygame.display.set_caption("BEAR")
-game_icon = pygame.image.load("images/player.png")
-pygame.display.set_icon(game_icon)
+    # game options
+    def init_window(self):
+        pygame.init()
+        self.screen_resolution = (800,300)
+        self.screen = pygame.display.set_mode(self.screen_resolution)
+        self.clock = pygame.time.Clock()
+        pygame.display.set_caption("BEAR")
+        self.game_icon = pygame.image.load("images/player.png")
+        pygame.display.set_icon(self.game_icon)
 
+    def set_game_options(self):
+        self.background_image_size = (1600,300)
+        self.tree_image_size = (40, 50)
+        self.bird_image_size = (40, 30)
+        self.player_image_size = (50, 50)
+        self.player_image_outline = (40, 45)
 
-# set game settings
-tree_image_size = (40, 50)
-bird_image_size = (40, 30)
-player_image_size = (50, 50)
-player_image_outline = (40, 45)
-long_jump_duration = 370
-short_jump_duration = 50
-background_x = 0
-score = 0
-frame_counter = 0
-running = True
-
-
-# load images
-background = pygame.image.load('images/background.png').convert_alpha()
-background = pygame.transform.scale(background, (1600,300))
-
-player_image = pygame.image.load("images/player.png").convert_alpha()
-player_image = pygame.transform.scale(player_image, player_image_size)
-
-tree_image = pygame.image.load("images/tree.png").convert_alpha()
-tree_image = pygame.transform.scale(tree_image, tree_image_size)
-
-bird_image = pygame.image.load("images/bird.png").convert_alpha()
-bird_image = pygame.transform.scale(bird_image, bird_image_size)
-
-# set fonts
-comicsans20 = pygame.font.SysFont('Comic Sans MS', 20)
-comicsans30 = pygame.font.SysFont('Comic Sans MS', 30)
-comicsans50 = pygame.font.SysFont('Comic Sans MS', 50)
-
-
-# instansiate player and trees list
-player = create_player(screen, screen_resolution, player_image, player_image_size=player_image_outline)
-obstacles = []
-
-
-
-
-
-def gameover():
-    while True:
-        # gameover info
-        textsurface = comicsans50.render('Game Over', False, (0, 0, 0))
-        textsurface2 = comicsans20.render('(press right to continue)', False, (0, 0, 0))
-
-        screen.blit(textsurface,(250,0))
-        screen.blit(textsurface2,(250,50))
+        self.background_path = "images/background.png"
+        self.tree_image_path = "images/tree.png"
+        self.bird_image_path = "images/bird.png"
+        self.player_image_path = "images/player.png"
         
-        # gameover screen events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
-                    return True
+        self.long_jump_duration = 30
+        self.short_jump_duration = 3
+
+    def load_game_elements(self):
+        # load images
+        background = pygame.image.load(self.background_path).convert_alpha()
+        self.background = pygame.transform.scale(background, self.background_image_size)
+
+        player_image = pygame.image.load(self.player_image_path).convert_alpha()
+        self.player_image = pygame.transform.scale(player_image, self.player_image_size)
+
+        tree_image = pygame.image.load(self.tree_image_path).convert_alpha()
+        self.tree_image = pygame.transform.scale(tree_image, self.tree_image_size)
+
+        bird_image = pygame.image.load(self.bird_image_path).convert_alpha()
+        self.bird_image = pygame.transform.scale(bird_image, self.bird_image_size)
+
+        # set fonts
+        self.comicsans20 = pygame.font.SysFont('Comic Sans MS', 20)
+        self.comicsans30 = pygame.font.SysFont('Comic Sans MS', 30)
+        self.comicsans50 = pygame.font.SysFont('Comic Sans MS', 50)
+        self.comicsans70 = pygame.font.SysFont('Comic Sans MS', 70)
         
-        pygame.display.update()
+    def init_game(self):
+        self.score = 0
+        self.background_x = 0
+        self.frame_counter = 0
+        self.player = create_player(self.screen, self.screen_resolution, self.player_image, player_image_size=self.player_image_outline)
+        self.obstacles = []
 
-
-def create_obstacle(rand_interval_tree=1000, rand_interval_bird=2000, distance_more_than=200, distance_less_than=30, obstacle_moveing_speed=0.25):
-    if(random.randint(0, rand_interval_tree) == 0):
-        if(obstacles):
-            base_pos = obstacles[-1].get_base_position()["x"]
-            current_pos = obstacles[-1].get_pos()["x"]
-            if(base_pos - current_pos > distance_more_than or base_pos - current_pos < distance_less_than):
-                obstacles.append(create_tree(screen, screen_resolution, tree_image, obstacle_moveing_speed))  
-        else:
-            obstacles.append(create_tree(screen, screen_resolution, tree_image, obstacle_moveing_speed))
-
-    if(random.randint(0, rand_interval_bird) == 0):
-        if(obstacles):
-            base_pos = obstacles[-1].get_base_position()["x"]
-            current_pos = obstacles[-1].get_pos()["x"]
-            if(base_pos - current_pos > distance_more_than or base_pos - current_pos < distance_less_than):
-                obstacles.append(create_bird(screen, screen_resolution, bird_image, obstacle_moveing_speed))
-        else:
-            obstacles.append(create_bird(screen, screen_resolution, bird_image, obstacle_moveing_speed))
-
-
-
-
-
-# game loop
-while running:
+    def reset_game(self):
+        self.obstacles.clear()
+        gc.collect()
+        self.init_game()
     
-    # moving background 
-    screen.fill((255,255,255))
-    screen.blit(background,(background_x,0))
-    background_x -= 0.1
-    if(background_x <= -800):
-        background_x = 0
+    # menus
+    def start_menu(self):
+        selected_menu_item = 0
+        menu_element_count = 3
+        while True:
+            self.screen.fill((255,255,255))
+            self.screen.blit(self.background,(self.background_x,0))
+            self.background_x -= 2
+            if(self.background_x <= -800):
+                self.background_x = 0
+            
+
+            if(selected_menu_item == 0):
+                start_game_text = self.comicsans50.render("START GAME", False, (255, 0, 0))
+                high_scores_text = self.comicsans50.render("HIGH SCORES", False, (0, 0, 0))
+                quit_game_text = self.comicsans50.render("QUIT", False, (0, 0, 0))
+            elif(selected_menu_item == 1):
+                start_game_text = self.comicsans50.render("START GAME", False, (0, 0, 0))
+                high_scores_text = self.comicsans50.render("HIGH SCORES", False, (255, 0, 0))
+                quit_game_text = self.comicsans50.render("QUIT", False, (0, 0, 0))
+            elif(selected_menu_item == 2):
+                start_game_text = self.comicsans50.render("START GAME", False, (0, 0, 0))
+                high_scores_text = self.comicsans50.render("HIGH SCORES", False, (0, 0, 0))
+                quit_game_text = self.comicsans50.render("QUIT", False, (255, 0, 0))
+
+            self.screen.blit(start_game_text,(self.screen_resolution[0]/4+30,self.screen_resolution[1]/4-40))
+            self.screen.blit(high_scores_text,(self.screen_resolution[0]/4+30,self.screen_resolution[1]/4+20))
+            self.screen.blit(quit_game_text,(self.screen_resolution[0]/4+130,self.screen_resolution[1]/4+80))
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_DOWN:
+                        selected_menu_item += 1
+                        selected_menu_item = selected_menu_item%menu_element_count
+                    if event.key == pygame.K_UP:
+                        selected_menu_item -= 1
+                        selected_menu_item = selected_menu_item%menu_element_count
+                    if event.key == pygame.K_RETURN:
+                        if(selected_menu_item == 0):
+                            self.game()
+                        elif(selected_menu_item == 1):
+                            self.high_scores()
+                        elif(selected_menu_item == 2):
+                            sys.exit()
+
+            pygame.display.update()
+            self.clock.tick(60)
+
+    def high_scores(self):
+        while True:
+            self.screen.fill((255,255,255))
+            self.screen.blit(self.background,(self.background_x,0))
+            self.background_x -= 2
+            if(self.background_x <= -800):
+                self.background_x = 0
+            
+            # TODO add high scores
+
+            back_text = self.comicsans50.render("BACK", False, (255, 0, 0))
+            self.screen.blit(back_text,(50,self.screen_resolution[1]-70))
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
+                        self.start_menu()
+                        
+            pygame.display.update()
+            self.clock.tick(60)
+
+    def gameover(self):
+        while True:
+            # gameover info
+            game_over_text = self.comicsans70.render('Game Over', False, (200, 0, 0))
+            continue_text = self.comicsans20.render('(press enter to continue esc to menu)', False, (0, 0, 0))
+
+            self.screen.blit(game_over_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4-20))
+            self.screen.blit(continue_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4+60))
+            
+            # gameover screen events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        self.reset_game()
+                        self.game()
+                    if event.key == pygame.K_ESCAPE:
+                        self.reset_game()
+                        self.start_menu()
+
+            pygame.display.update()
+            self.clock.tick(60)
+
+    # game
+    def create_obstacle(self, rand_interval_tree=75, rand_interval_bird=150, distance_more_than=200, distance_less_than=30, obstacle_moveing_speed=6):
+        if(random.randint(0, rand_interval_tree) == 0):
+            if(self.obstacles):
+                base_pos = self.obstacles[-1].get_base_position()["x"]
+                current_pos = self.obstacles[-1].get_pos()["x"]
+                if(base_pos - current_pos > distance_more_than or base_pos - current_pos < distance_less_than):
+                    self.obstacles.append(create_tree(self.screen, self.screen_resolution, self.tree_image, obstacle_moveing_speed))  
+            else:
+                self.obstacles.append(create_tree(self.screen, self.screen_resolution, self.tree_image, obstacle_moveing_speed))
+
+        if(random.randint(0, rand_interval_bird) == 0):
+            if(self.obstacles):
+                base_pos = self.obstacles[-1].get_base_position()["x"]
+                current_pos = self.obstacles[-1].get_pos()["x"]
+                if(base_pos - current_pos > distance_more_than or base_pos - current_pos < distance_less_than):
+                    self.obstacles.append(create_bird(self.screen, self.screen_resolution, self.bird_image, obstacle_moveing_speed))
+            else:
+                self.obstacles.append(create_bird(self.screen, self.screen_resolution, self.bird_image, obstacle_moveing_speed))
+
+    def game(self):
+        while True:
+            # moving background 
+            self.screen.fill((255,255,255))
+            self.screen.blit(self.background,(self.background_x,0))
+            self.background_x -= 2
+            if(self.background_x <= -800):
+                self.background_x = 0
 
 
-    # calculate and show score
-    textsurface = comicsans30.render('SCORE:{0}'.format(score), False, (0, 0, 0))
-    screen.blit(textsurface,(10,10))
-    if(frame_counter%10 == 0):
-        score += 1
-    frame_counter += 1
+            # calculate and show score
+            textsurface = self.comicsans30.render('SCORE:{0}'.format(self.score), False, (0, 0, 0))
+            self.screen.blit(textsurface,(10,10))
+            if(self.frame_counter%10 == 0):
+                self.score += 1
+            self.frame_counter += 1
 
 
-    # player actions
-    player.draw_player()
+            # player actions
+            self.player.draw_player()
 
-    if(player.is_jumping()):
-        player.jump()
+            if(self.player.is_jumping()):
+                self.player.jump()
 
-    if(player.will_duck):
-        if(not player.is_jumping() and not player.is_ducked):
-            player.duck()
+            if(self.player.will_duck):
+                if(not self.player.is_jumping() and not self.player.is_ducked):
+                    self.player.duck()
 
 
-    
-    # create obstacles
-    if(score < 1000):
-        create_obstacle(obstacle_moveing_speed=0.3)
-    elif(score < 2000):
-        create_obstacle(obstacle_moveing_speed=0.35)
-    elif(score < 3000):
-        create_obstacle(obstacle_moveing_speed=0.4)
-    elif(score < 4000):
-        create_obstacle(obstacle_moveing_speed=0.45)
-    elif(score < 5000):
-        create_obstacle(obstacle_moveing_speed=0.5)
-    else:
-        create_obstacle(obstacle_moveing_speed=0.55)
-    
+            
+            # create obstacles
+            if(self.score < 100):
+                self.create_obstacle(obstacle_moveing_speed=6)
+            elif(self.score < 200):
+                self.create_obstacle(obstacle_moveing_speed=7)
+            elif(self.score < 300):
+                self.create_obstacle(obstacle_moveing_speed=8)
+            elif(self.score < 400):
+                self.create_obstacle(obstacle_moveing_speed=9)
+            elif(self.score < 500):
+                self.create_obstacle(obstacle_moveing_speed=10)
+            else:
+                self.create_obstacle(obstacle_moveing_speed=11)
+            
 
-    # move, delete check collision
-    for obstacle in obstacles:
-        obstacle.move_obstacle()
-        obstacle.draw_obstacle()
-        if(obstacle.delete_obstacle_if_needed()):
-            obstacles.remove(obstacle)
-        
-        # gameover screen
-        if(player.is_collided(obstacle.get_hit_box())):
-            running = gameover()
-            if(running):
-                player = create_player(screen, screen_resolution, player_image, player_image_size=player_image_outline)
-                obstacles.clear()
-                score = 0
-                gc.collect()
+            # move, delete check collision obstacles
+            for obstacle in self.obstacles:
+                obstacle.move_obstacle()
+                obstacle.draw_obstacle()
+                if(obstacle.delete_obstacle_if_out_of_screen()):
+                    self.obstacles.remove(obstacle)
+                
+                # gameover screen
+                if(self.player.is_collided(obstacle.get_hit_box())):
+                    self.gameover()
+                        
 
 
 
-    # events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+            # events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
 
-        if event.type == pygame.KEYDOWN:
-            # long jump on hold
-            if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                if(not player.is_jumping() and not player.is_ducked):
-                    player.start_jumping(long_jump_duration)
-        
-            if event.key == pygame.K_DOWN:
-                player.will_duck = True
+                if event.type == pygame.KEYDOWN:
+                    # long jump on hold
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                        if(not self.player.is_jumping() and not self.player.is_ducked):
+                            self.player.start_jumping(self.long_jump_duration)
+                
+                    if event.key == pygame.K_DOWN:
+                        self.player.will_duck = True
 
-        if event.type == pygame.KEYUP:
-            # short jump on tap
-            if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                if(player.is_jumping()):
-                    player.set_air_time_counter(short_jump_duration)
-                    
-            if event.key == pygame.K_DOWN:
-                if(player.is_ducked):
-                    player.unduck()
+                if event.type == pygame.KEYUP:
+                    # short jump on tap
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                        if(self.player.is_jumping()):
+                            self.player.set_air_time_counter(self.short_jump_duration)
+                            
+                    if event.key == pygame.K_DOWN:
+                        if(self.player.is_ducked):
+                            self.player.unduck()
 
+            pygame.display.update()
+            self.clock.tick(60)
 
-
-    pygame.display.update()

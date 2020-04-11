@@ -8,11 +8,11 @@ class player():
         self.going_down = False
         self.mid_air = False
 
-        self.air_time = 50
+        self.air_time = 3
         self.air_time_counter = self.air_time
         self.max_jump_height = 120
-        self.jump_speed = 0.4
-        self.fall_speed = 0.6
+        self.jump_speed = 10
+        self.fall_speed = 12
 
         # duck stuff (will duck is required because if player holding down button while character is mid air)
         self.is_ducked = False
