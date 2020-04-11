@@ -5,6 +5,8 @@ import sys
 from player import player as create_player
 from obstacle import tree as create_tree
 from obstacle import bird as create_bird
+from score_handler import score_handler
+
 class bear_game():
     def __init__(self):
         self.init_window()
@@ -57,6 +59,9 @@ class bear_game():
         self.comicsans30 = pygame.font.SysFont('Comic Sans MS', 30)
         self.comicsans50 = pygame.font.SysFont('Comic Sans MS', 50)
         self.comicsans70 = pygame.font.SysFont('Comic Sans MS', 70)
+
+        # load scores 
+        self.score_handler = score_handler()
         
     def init_game(self):
         self.score = 0
@@ -72,9 +77,11 @@ class bear_game():
     
     # menus
     def start_menu(self):
+        # handle menu movement
         selected_menu_item = 0
         menu_element_count = 3
         while True:
+             # moving background 
             self.screen.fill((255,255,255))
             self.screen.blit(self.background,(self.background_x,0))
             self.background_x -= 2
@@ -122,13 +129,17 @@ class bear_game():
 
     def high_scores(self):
         while True:
+             # moving background 
             self.screen.fill((255,255,255))
             self.screen.blit(self.background,(self.background_x,0))
             self.background_x -= 2
             if(self.background_x <= -800):
                 self.background_x = 0
             
-            # TODO add high scores
+            # print high scores
+            high_scores = self.score_handler.get_high_scores()
+            for index, high_score in enumerate(high_scores):
+                self.screen.blit(self.comicsans30.render("{0}-{1}".format(index+1, high_score), False, (0, 0, 0)),(self.screen_resolution[0]/4-30,50+(index*30)))
 
             back_text = self.comicsans50.render("BACK", False, (255, 0, 0))
             self.screen.blit(back_text,(50,self.screen_resolution[1]-70))
@@ -144,13 +155,21 @@ class bear_game():
             self.clock.tick(60)
 
     def gameover(self):
+        # score handling
+        is_best = self.score_handler.is_best_score(self.score)
+        self.score_handler.check_and_add_new_score(self.score)
+        
         while True:
             # gameover info
+            new_best_score_text = self.comicsans30.render('NEW BEST SCORE', False, (0, 0, 200))
             game_over_text = self.comicsans70.render('Game Over', False, (200, 0, 0))
             continue_text = self.comicsans20.render('(press enter to continue esc to menu)', False, (0, 0, 0))
-
-            self.screen.blit(game_over_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4-20))
-            self.screen.blit(continue_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4+60))
+            
+            if(is_best):
+                self.screen.blit(new_best_score_text,(self.screen_resolution[0]/4+20,self.screen_resolution[1]/4-30))
+            
+            self.screen.blit(game_over_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4-10))
+            self.screen.blit(continue_text,(self.screen_resolution[0]/4,self.screen_resolution[1]/4+70))
             
             # gameover screen events
             for event in pygame.event.get():
