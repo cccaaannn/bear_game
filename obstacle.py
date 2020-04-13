@@ -3,7 +3,7 @@ import pygame
 class obstacle():
     def __init__(self, screen, screen_resolution, obstacle_image, obstacle_moveing_speed, obstacle_image_size):
 
-        self.base_position = {"x":screen_resolution[0]+20, "y":screen_resolution[1]-obstacle_image_size[1]}
+        self.base_position = {"x":screen_resolution[0]+50, "y":screen_resolution[1]-obstacle_image_size[1]}
         self.obstacle_position = {"x":self.base_position["x"], "y":self.base_position["y"]}
 
         self.obstacle_moveing_speed = obstacle_moveing_speed

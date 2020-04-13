@@ -1,4 +1,5 @@
 import pygame
+from pygame import mixer
 import random
 import gc
 import sys
@@ -32,17 +33,26 @@ class bear_game():
         self.player_image_size = (50, 50)
         self.player_image_outline = (40, 45)
 
-        self.background_path = "images/background.png"
+        self.background_image_path = "images/background.png"
         self.tree_image_path = "images/tree.png"
         self.bird_image_path = "images/bird.png"
         self.player_image_path = "images/player.png"
-        
-        self.long_jump_duration = 30
+
+        self.background_music_path = "sounds\\background_music.mp3"
+        self.jump_sound_path = "sounds/jump.wav"
+        self.crush_sound_path = "sounds/crush.wav"
+        self.speed_up_sound_path = "sounds/speed_up.wav"
+
+        self.base_obstacle_moveing_speed = 6
+        self.long_jump_duration = 20
         self.short_jump_duration = 3
+
+        
+
 
     def load_game_elements(self):
         # load images
-        background = pygame.image.load(self.background_path).convert_alpha()
+        background = pygame.image.load(self.background_image_path).convert_alpha()
         self.background = pygame.transform.scale(background, self.background_image_size)
 
         player_image = pygame.image.load(self.player_image_path).convert_alpha()
@@ -54,6 +64,21 @@ class bear_game():
         bird_image = pygame.image.load(self.bird_image_path).convert_alpha()
         self.bird_image = pygame.transform.scale(bird_image, self.bird_image_size)
 
+        # load sounds
+        mixer.music.load(self.background_music_path)
+        pygame.mixer.music.set_volume(0.2)
+        self.jump_sound = mixer.Sound(self.jump_sound_path)
+        self.jump_sound.set_volume(0.2)
+        self.crush_sound = mixer.Sound(self.crush_sound_path)
+        self.crush_sound.set_volume(0.2)
+        self.speed_up_sound = mixer.Sound(self.speed_up_sound_path)
+        self.speed_up_sound.set_volume(0.2)
+
+        # set channels
+        self.sound_channel1 = pygame.mixer.Channel(1)
+        self.sound_channel2 = pygame.mixer.Channel(2)
+        self.sound_channel3 = pygame.mixer.Channel(3)
+
         # set fonts
         self.comicsans20 = pygame.font.SysFont('Comic Sans MS', 20)
         self.comicsans30 = pygame.font.SysFont('Comic Sans MS', 30)
@@ -64,6 +89,10 @@ class bear_game():
         self.score_handler = score_handler()
         
     def init_game(self):
+        if(not pygame.mixer.music.get_busy()):
+            mixer.music.play(-1)
+
+        self.obstacle_moveing_speed = self.base_obstacle_moveing_speed
         self.score = 0
         self.background_x = 0
         self.frame_counter = 0
@@ -236,20 +265,15 @@ class bear_game():
 
 
             
-            # create obstacles
-            if(self.score < 100):
-                self.create_obstacle(obstacle_moveing_speed=6)
-            elif(self.score < 200):
-                self.create_obstacle(obstacle_moveing_speed=7)
-            elif(self.score < 300):
-                self.create_obstacle(obstacle_moveing_speed=8)
-            elif(self.score < 400):
-                self.create_obstacle(obstacle_moveing_speed=9)
-            elif(self.score < 500):
-                self.create_obstacle(obstacle_moveing_speed=10)
-            else:
-                self.create_obstacle(obstacle_moveing_speed=11)
-            
+            # increase speed
+            if(self.score % 100 == 0):
+                self.obstacle_moveing_speed = (self.score/100) + self.base_obstacle_moveing_speed
+                if(not self.sound_channel3.get_busy()):
+                    self.sound_channel3.play(self.speed_up_sound)
+
+            # create obstacles   
+            self.create_obstacle(obstacle_moveing_speed=self.obstacle_moveing_speed)
+
 
             # move, delete check collision obstacles
             for obstacle in self.obstacles:
@@ -260,6 +284,7 @@ class bear_game():
                 
                 # gameover screen
                 if(self.player.is_collided(obstacle.get_hit_box())):
+                    self.sound_channel2.play(self.crush_sound)
                     self.gameover()
                         
 
@@ -274,7 +299,9 @@ class bear_game():
                     # long jump on hold
                     if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
                         if(not self.player.is_jumping() and not self.player.is_ducked):
+                            self.sound_channel1.play(self.jump_sound)
                             self.player.start_jumping(self.long_jump_duration)
+                            
                 
                     if event.key == pygame.K_DOWN:
                         self.player.will_duck = True
